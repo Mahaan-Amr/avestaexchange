@@ -3,11 +3,12 @@ import { getServerSession } from 'next-auth'
 import { prisma } from '@/lib/prisma'
 import { authOptions } from '@/lib/auth'
 import bcrypt from 'bcryptjs'
+import { Role } from '@prisma/client'
 
 interface UpdateUserData {
-  name?: string | null
+  name?: string
   email?: string
-  role?: string
+  role?: Role
   password?: string
 }
 

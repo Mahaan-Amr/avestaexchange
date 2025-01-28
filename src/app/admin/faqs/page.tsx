@@ -1,9 +1,9 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { FAQ } from '@prisma/client'
-import { DataTable } from '@/components/ui/admin/DataTable'
+import { DataTable, Column } from '@/components/ui/admin/DataTable'
 import { FAQForm } from '@/components/ui/admin/FAQForm'
 import { Modal } from '@/components/ui/Modal'
 import { Toast } from '@/components/ui/Toast'
@@ -15,11 +15,7 @@ export default function FAQsPage() {
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null)
 
-  useEffect(() => {
-    fetchFAQs()
-  }, [])
-
-  const fetchFAQs = async () => {
+  const fetchFAQs = useCallback(async () => {
     try {
       const response = await fetch('/api/admin/faqs')
       if (!response.ok) throw new Error('Failed to fetch FAQs')
@@ -28,7 +24,11 @@ export default function FAQsPage() {
     } catch {
       showToast('Failed to fetch FAQs', 'error')
     }
-  }
+  }, [])
+
+  useEffect(() => {
+    fetchFAQs()
+  }, [fetchFAQs])
 
   const handleCreate = async (data: Partial<FAQ>) => {
     try {
@@ -111,30 +111,33 @@ export default function FAQsPage() {
     setToast({ message, type })
   }
 
-  const columns = [
+  const columns: Column<FAQ>[] = [
+    { key: 'id', title: 'ID' },
     { key: 'question', title: 'Question' },
     { key: 'answer', title: 'Answer' },
     { key: 'category', title: 'Category' },
     { key: 'order', title: 'Order' },
+    { key: 'createdAt', title: 'Created At' },
+    { key: 'updatedAt', title: 'Updated At' },
     {
-      key: 'language',
+      key: 'language' as keyof FAQ,
       title: 'Language',
-      render: (value: string) => (
+      render: (value) => (
         <span className={`px-2 py-1 rounded text-sm ${
-          value === 'en' ? 'bg-blue-100 text-blue-800' : 'bg-green-100 text-green-800'
+          String(value) === 'en' ? 'bg-blue-100 text-blue-800' : 'bg-green-100 text-green-800'
         }`}>
-          {value === 'en' ? 'English' : 'فارسی'}
+          {String(value) === 'en' ? 'English' : 'فارسی'}
         </span>
       )
     },
     {
       key: 'isActive',
       title: 'Status',
-      render: (value: boolean) => (
+      render: (value) => (
         <span className={`px-2 py-1 rounded text-sm ${
-          value ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+          Boolean(value) ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
         }`}>
-          {value ? 'Active' : 'Inactive'}
+          {Boolean(value) ? 'Active' : 'Inactive'}
         </span>
       )
     }

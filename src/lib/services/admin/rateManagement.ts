@@ -1,9 +1,7 @@
 import { PrismaClient } from '@prisma/client'
 import { logError } from '@/lib/utils/logger'
 
-const prisma = new PrismaClient()
-
-interface SetExchangeRateMarkupData {
+export interface SetExchangeRateMarkupData {
   baseCurrency: string
   quoteCurrency: string
   buyMarkup: number
@@ -11,18 +9,20 @@ interface SetExchangeRateMarkupData {
   baseRate?: number
 }
 
+function calculateRate(baseRate: number, markup: number): number {
+  return baseRate * (1 + markup / 100)
+}
+
 export async function setExchangeRateMarkup(data: SetExchangeRateMarkupData) {
   try {
     validateMarkupValue(data.buyMarkup)
     validateMarkupValue(data.sellMarkup)
 
+    const prisma = new PrismaClient()
     const pair = `${data.baseCurrency}/${data.quoteCurrency}`
     const existingRate = await prisma.exchangeRate.findUnique({
       where: {
-        baseCurrency_quoteCurrency: {
-          baseCurrency: data.baseCurrency,
-          quoteCurrency: data.quoteCurrency
-        }
+        pair
       }
     })
 
@@ -40,12 +40,7 @@ export async function setExchangeRateMarkup(data: SetExchangeRateMarkupData) {
 
     if (existingRate) {
       return await prisma.exchangeRate.update({
-        where: {
-          baseCurrency_quoteCurrency: {
-            baseCurrency: data.baseCurrency,
-            quoteCurrency: data.quoteCurrency
-          }
-        },
+        where: { id: existingRate.id },
         data: rateData
       })
     } else {
@@ -59,18 +54,6 @@ export async function setExchangeRateMarkup(data: SetExchangeRateMarkupData) {
   }
 }
 
-export async function getExchangeRateMarkups() {
-  try {
-    return await prisma.exchangeRate.findMany({
-      where: { isActive: true },
-      orderBy: { baseCurrency: 'asc' }
-    })
-  } catch (error: unknown) {
-    logError(error, 'Error getting exchange rate markups')
-    throw error
-  }
-}
-
 export function validateMarkupValue(markup: number) {
   if (markup < 0) {
     throw new Error('Markup cannot be negative')
@@ -80,6 +63,9 @@ export function validateMarkupValue(markup: number) {
   }
 }
 
-function calculateRate(baseRate: number, markup: number): number {
-  return baseRate * (1 + markup / 100)
+export async function getExchangeRateMarkups() {
+  const prisma = new PrismaClient()
+  return prisma.exchangeRate.findMany({
+    where: { isActive: true }
+  })
 } 

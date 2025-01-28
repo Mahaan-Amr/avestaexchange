@@ -13,9 +13,9 @@ import { ExchangeCalculator } from '@/components/ui/ExchangeCalculator'
 import { ExchangeRateChart } from '@/components/ui/ExchangeRateChart'
 
 interface Props {
-  params: {
+  params: Promise<{
     lang: string
-  }
+  }>
 }
 
 export async function generateStaticParams() {
@@ -23,7 +23,7 @@ export async function generateStaticParams() {
 }
 
 export default async function HomePage(props: Props) {
-  const params = await Promise.resolve(props.params)
+  const params = await props.params
   const { lang } = params
 
   if (!locales.includes(lang as Locale)) {

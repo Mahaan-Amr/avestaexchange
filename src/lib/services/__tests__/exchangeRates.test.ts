@@ -1,4 +1,4 @@
-import { getCachedRates, getRateLimitStatus, ExchangeRate } from '../exchangeRates'
+import { getCachedRates, getRateLimitStatus } from '../exchangeRates'
 
 describe('Exchange Rates Service', () => {
   beforeEach(() => {

@@ -12,31 +12,31 @@ import { Input } from '@/components/ui/input'
 import { PencilIcon, TrashIcon } from '@heroicons/react/24/outline'
 import { Checkbox } from '@/components/ui/checkbox'
 
-interface Column {
-  key: string
+export interface Column<T> {
+  key: keyof T & string
   title: string
-  render?: (value: any) => React.ReactNode
+  render?: (value: T[keyof T]) => React.ReactNode
 }
 
-interface DataTableProps {
-  columns: Column[]
-  data: any[]
-  onEdit?: (item: any) => void
-  onDelete?: (item: any) => void
-  onBulkDelete?: (items: any[]) => void
-  searchKey?: string
+interface DataTableProps<T> {
+  columns: Column<T>[]
+  data: T[]
+  onEdit?: (item: T) => void
+  onDelete?: (item: T) => void
+  onBulkDelete?: (items: T[]) => void
+  searchKey: keyof T
 }
 
-export function DataTable({
+export function DataTable<T extends { id: string | number }>({
   columns,
   data,
   onEdit,
   onDelete,
   onBulkDelete,
-  searchKey = 'name'
-}: DataTableProps) {
+  searchKey
+}: DataTableProps<T>) {
   const [searchTerm, setSearchTerm] = useState('')
-  const [selectedItems, setSelectedItems] = useState<any[]>([])
+  const [selectedItems, setSelectedItems] = useState<T[]>([])
 
   const filteredData = data.filter(item =>
     String(item[searchKey]).toLowerCase().includes(searchTerm.toLowerCase())
@@ -46,12 +46,17 @@ export function DataTable({
     setSelectedItems(checked ? filteredData : [])
   }
 
-  const handleSelectItem = (item: any, checked: boolean) => {
+  const handleSelectItem = (item: T, checked: boolean) => {
     setSelectedItems(prev =>
       checked
         ? [...prev, item]
         : prev.filter(i => i.id !== item.id)
     )
+  }
+
+  const renderCell = (item: T, column: Column<T>) => {
+    const value = item[column.key]
+    return column.render ? column.render(value) : String(value)
   }
 
   return (
@@ -83,7 +88,7 @@ export function DataTable({
               {onBulkDelete && (
                 <TableHead className="w-12">
                   <Checkbox
-                    checked={selectedItems.length === filteredData.length}
+                    checked={selectedItems.length === filteredData.length && filteredData.length > 0}
                     onCheckedChange={handleSelectAll}
                   />
                 </TableHead>
@@ -100,16 +105,14 @@ export function DataTable({
                 {onBulkDelete && (
                   <TableCell>
                     <Checkbox
-                      checked={selectedItems.some(i => i.id === item.id)}
-                      onCheckedChange={(checked) => handleSelectItem(item, checked)}
+                      checked={Boolean(selectedItems.some(i => i.id === item.id))}
+                      onCheckedChange={(checked) => handleSelectItem(item, Boolean(checked))}
                     />
                   </TableCell>
                 )}
                 {columns.map((column) => (
                   <TableCell key={column.key}>
-                    {column.render
-                      ? column.render(item[column.key])
-                      : String(item[column.key])}
+                    {renderCell(item, column)}
                   </TableCell>
                 ))}
                 {(onEdit || onDelete) && (

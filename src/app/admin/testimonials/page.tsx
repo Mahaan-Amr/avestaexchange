@@ -1,9 +1,9 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { Testimonial } from '@prisma/client'
-import { DataTable } from '@/components/ui/admin/DataTable'
+import { DataTable, Column } from '@/components/ui/admin/DataTable'
 import { TestimonialForm } from '@/components/ui/admin/TestimonialForm'
 import { Modal } from '@/components/ui/Modal'
 import { Toast } from '@/components/ui/Toast'
@@ -15,11 +15,7 @@ export default function TestimonialsPage() {
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null)
 
-  useEffect(() => {
-    fetchTestimonials()
-  }, [])
-
-  const fetchTestimonials = async () => {
+  const fetchTestimonials = useCallback(async () => {
     try {
       const response = await fetch('/api/admin/testimonials')
       if (!response.ok) throw new Error('Failed to fetch testimonials')
@@ -28,7 +24,11 @@ export default function TestimonialsPage() {
     } catch {
       showToast('Failed to fetch testimonials', 'error')
     }
-  }
+  }, [])
+
+  useEffect(() => {
+    fetchTestimonials()
+  }, [fetchTestimonials])
 
   const handleCreate = async (data: Partial<Testimonial>) => {
     try {
@@ -111,32 +111,23 @@ export default function TestimonialsPage() {
     setToast({ message, type })
   }
 
-  const columns = [
+  const columns: Column<Testimonial>[] = [
     { key: 'name', title: 'Name' },
     { key: 'role', title: 'Role' },
     { key: 'content', title: 'Content' },
-    { key: 'rating', title: 'Rating' },
-    {
-      key: 'language',
-      title: 'Language',
-      render: (value: string) => (
-        <span className={`px-2 py-1 rounded text-sm ${
-          value === 'en' ? 'bg-blue-100 text-blue-800' : 'bg-green-100 text-green-800'
-        }`}>
-          {value === 'en' ? 'English' : 'فارسی'}
-        </span>
-      )
-    },
     {
       key: 'isActive',
       title: 'Status',
-      render: (value: boolean) => (
-        <span className={`px-2 py-1 rounded text-sm ${
-          value ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
-        }`}>
-          {value ? 'Active' : 'Inactive'}
-        </span>
-      )
+      render: (value) => {
+        const isActive = Boolean(value)
+        return (
+          <span className={`px-2 py-1 rounded text-sm ${
+            isActive ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+          }`}>
+            {isActive ? 'Active' : 'Inactive'}
+          </span>
+        )
+      }
     }
   ]
 

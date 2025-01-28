@@ -3,13 +3,13 @@ import { Locale, locales } from '@/lib/utils/i18n'
 import FAQSection from '@/components/sections/FAQSection'
 
 interface Props {
-  params: {
+  params: Promise<{
     lang: string
-  }
+  }>
 }
 
 export default async function FAQPage(props: Props) {
-  const params = await Promise.resolve(props.params)
+  const params = await props.params
   const { lang } = params
 
   if (!locales.includes(lang as Locale)) {

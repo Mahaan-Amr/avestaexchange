@@ -3,7 +3,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { Label } from '@/components/ui/label'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Switch } from '@/components/ui/switch'
 import { Testimonial } from '@prisma/client'
 
@@ -18,7 +18,9 @@ export function TestimonialForm({
   onSubmit,
   onCancel
 }: TestimonialFormProps) {
-  const [currentLang, setCurrentLang] = useState<'en' | 'fa'>(testimonial?.language || 'en')
+  const [currentLang, setCurrentLang] = useState<'en' | 'fa'>(
+    testimonial?.language === 'fa' ? 'fa' : 'en'
+  )
   const [formData, setFormData] = useState<Partial<Testimonial>>({
     name: testimonial?.name || '',
     role: testimonial?.role || '',

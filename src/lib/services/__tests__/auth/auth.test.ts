@@ -1,20 +1,22 @@
-import { PrismaClient } from '@prisma/client'
 import bcrypt from 'bcrypt'
 import { createUser, validateUser, getUserByEmail } from '../../auth'
+import { validateCredentials } from '../../auth/auth'
 
-jest.mock('@prisma/client', () => {
-  const mockPrisma = {
-    user: {
-      findUnique: jest.fn(),
-      create: jest.fn()
-    }
-  }
-  return {
-    PrismaClient: jest.fn().mockImplementation(() => mockPrisma)
-  }
-})
+type MockUser = {
+  findUnique: jest.Mock
+  create: jest.Mock
+}
 
-const mockPrisma = (new PrismaClient() as any).user
+const mockUser: MockUser = {
+  findUnique: jest.fn(),
+  create: jest.fn()
+}
+
+jest.mock('@prisma/client', () => ({
+  PrismaClient: jest.fn(() => ({
+    user: mockUser
+  }))
+}))
 
 describe('Authentication Service', () => {
   beforeEach(() => {
@@ -40,8 +42,8 @@ describe('Authentication Service', () => {
         updatedAt: new Date()
       }
 
-      mockPrisma.findUnique.mockResolvedValueOnce(null)
-      mockPrisma.create.mockResolvedValueOnce(mockCreatedUser)
+      mockUser.findUnique.mockResolvedValueOnce(null)
+      mockUser.create.mockResolvedValueOnce(mockCreatedUser)
 
       const result = await createUser(mockUserData)
       expect(result).toBeDefined()
@@ -65,7 +67,7 @@ describe('Authentication Service', () => {
         updatedAt: new Date()
       }
 
-      mockPrisma.findUnique.mockResolvedValueOnce(existingUser)
+      mockUser.findUnique.mockResolvedValueOnce(existingUser)
 
       await expect(createUser(mockUserData)).rejects.toThrow('Email already exists')
     })
@@ -85,7 +87,7 @@ describe('Authentication Service', () => {
         updatedAt: new Date()
       }
 
-      mockPrisma.findUnique.mockResolvedValueOnce(mockUser)
+      mockUser.findUnique.mockResolvedValueOnce(mockUser)
 
       const result = await validateUser('test@example.com', password)
       expect(result).toBe(true)
@@ -104,14 +106,14 @@ describe('Authentication Service', () => {
         updatedAt: new Date()
       }
 
-      mockPrisma.findUnique.mockResolvedValueOnce(mockUser)
+      mockUser.findUnique.mockResolvedValueOnce(mockUser)
 
       const result = await validateUser('test@example.com', 'wrongpassword')
       expect(result).toBe(false)
     })
 
     it('should return false for non-existent user', async () => {
-      mockPrisma.findUnique.mockResolvedValueOnce(null)
+      mockUser.findUnique.mockResolvedValueOnce(null)
 
       const result = await validateUser('nonexistent@example.com', 'password123')
       expect(result).toBe(false)
@@ -130,17 +132,46 @@ describe('Authentication Service', () => {
         updatedAt: new Date()
       }
 
-      mockPrisma.findUnique.mockResolvedValueOnce(mockUser)
+      mockUser.findUnique.mockResolvedValueOnce(mockUser)
 
       const result = await getUserByEmail('test@example.com')
       expect(result).toEqual(mockUser)
     })
 
     it('should return null if user not found', async () => {
-      mockPrisma.findUnique.mockResolvedValueOnce(null)
+      mockUser.findUnique.mockResolvedValueOnce(null)
 
       const result = await getUserByEmail('nonexistent@example.com')
       expect(result).toBeNull()
+    })
+  })
+})
+
+describe('Auth Service', () => {
+  beforeEach(() => {
+    jest.clearAllMocks()
+  })
+
+  describe('validateCredentials', () => {
+    it('should return null for invalid credentials', async () => {
+      mockUser.findUnique.mockResolvedValueOnce(null)
+
+      const result = await validateCredentials('test@example.com', 'password123')
+      expect(result).toBeNull()
+    })
+
+    it('should return user for valid credentials', async () => {
+      const mockUserData = {
+        id: '1',
+        email: 'test@example.com',
+        password: 'hashedPassword123',
+        role: 'ADMIN'
+      }
+
+      mockUser.findUnique.mockResolvedValueOnce(mockUserData)
+
+      const result = await validateCredentials('test@example.com', 'password123')
+      expect(result).toEqual(mockUserData)
     })
   })
 }) 

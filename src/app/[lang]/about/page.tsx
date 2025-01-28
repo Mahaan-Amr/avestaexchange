@@ -3,12 +3,15 @@ import { Locale, locales } from '@/lib/utils/i18n'
 import { AboutUs } from '@/components/sections/AboutUs'
 
 interface Props {
-  params: {
+  params: Promise<{
     lang: string
-  }
+  }>
 }
 
-export default async function AboutPage({ params: { lang } }: Props) {
+export default async function AboutPage(props: Props) {
+  const params = await props.params
+  const { lang } = params
+
   if (!locales.includes(lang as Locale)) {
     notFound()
   }

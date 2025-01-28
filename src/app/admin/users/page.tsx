@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { PencilIcon, TrashIcon, PlusIcon } from '@heroicons/react/24/outline'
 import { Modal } from '@/components/ui/Modal'
 import { Toast } from '@/components/ui/Toast'
@@ -35,23 +35,23 @@ export default function UsersPage() {
   })
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null)
 
-  useEffect(() => {
-    fetchUsers()
-  }, [])
-
-  const fetchUsers = async () => {
+  const fetchUsers = useCallback(async () => {
     try {
+      setLoading(true)
       const response = await fetch('/api/admin/users')
       if (!response.ok) throw new Error('Failed to fetch users')
       const data = await response.json()
       setUsers(data)
-    } catch (error) {
-      console.error('Error fetching users:', error)
+    } catch {
       showToast('Failed to fetch users', 'error')
     } finally {
       setLoading(false)
     }
-  }
+  }, [])
+
+  useEffect(() => {
+    fetchUsers()
+  }, [fetchUsers])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
