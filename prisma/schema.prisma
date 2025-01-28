@@ -1,0 +1,67 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mongodb"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String    @id @default(auto()) @map("_id") @db.ObjectId
+  name          String
+  email         String    @unique
+  password      String
+  role          Role      @default(USER)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+}
+
+model ExchangeRate {
+  id            String   @id @default(auto()) @map("_id") @db.ObjectId
+  pair          String   @unique
+  baseCurrency  String
+  quoteCurrency String
+  baseRate      Float
+  buyMarkup     Float    @default(0)
+  sellMarkup    Float    @default(0)
+  buyRate       Float
+  sellRate      Float
+  isActive      Boolean  @default(true)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@unique([baseCurrency, quoteCurrency])
+  @@index([isActive])
+}
+
+model Testimonial {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  name      String
+  role      String
+  content   String
+  image     String?
+  rating    Int      @default(5)
+  isActive  Boolean  @default(true)
+  language  String   @default("en")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model FAQ {
+  id          String   @id @default(auto()) @map("_id") @db.ObjectId
+  question    String
+  answer      String
+  category    String
+  language    String   @default("en")
+  isActive    Boolean  @default(true)
+  order       Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+enum Role {
+  USER
+  ADMIN
+  SUPER_ADMIN
+} 
